@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: alertcenter
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: alertcenter
+  name: alertcenter
+  namespace: alertcenter
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: alertcenter
+  template:
+    metadata:
+      labels:
+        app: alertcenter
+        releasedate: "2012998"
+    spec:
+      imagePullSecrets: 
+        - name: acr-image-pull-secret-vpc
+      containers:
+      - name: alertcenter
+        env:
+        - name: PORT
+          value: "19091"
+        - name: SQLALCHEMY_DATABASE_URI
+          value: "alertcenter:oXiK61YXtHglBA7qLEw3neMjfJQQ@172.18.56.43:3306/alertcenter"
+        - name: REDIS_ADDR
+          value: "172.18.56.43"
+        - name: REDIS_PASSWORD
+          value: ""
+        - name: MAIL_ENABLE
+          value: "True"
+        - name: MAIL_USER
+          value: ""
+        - name: MAIL_PASS
+          value: ""
+        - name: MAIL_HOST
+          value: ""
+        - name: WECHAT_ENABLE
+          value: "True"
+        - name: WECHAT_APPID
+          value: ""
+        - name: WECHAT_SECRET
+          value: ""
+        - name: WECHAT_TEAMPLATE_ID
+          value: ""
+        - name: WECHAT_OPEN_URL
+          value: ""
+        - name: PHONE_ENABLE
+          value: "True"
+        - name: PHONE_HOST
+          value: ""
+        - name: PHONE_APPCODE
+          value: ""
+        resources:
+            limits:
+              cpu: 500m
+              memory: 1Gi
+            requests:
+              cpu: 50m
+              memory: 50Mi
+
+        readinessProbe:
+          tcpSocket:
+            port: 19091
+          initialDelaySeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 19091
+          initialDelaySeconds: 10
+        image: "registry-vpc.cn-shenzhen.aliyuncs.com/dading/alertcenter:latest"
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 19091
+          name: http-19091
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertcenter
+  namespace: alertcenter
+  labels:
+    app: alertcenter
+spec:
+  selector:
+    app: alertcenter
+  type: NodePort
+  ports:
+    - port: 19091
+      targetPort: http-19091
+      name: http-19091

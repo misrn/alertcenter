@@ -1,0 +1,6 @@
+mysqlclient
+redis
+requests
+flask_sqlalchemy
+flask_apscheduler
+flask

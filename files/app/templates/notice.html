@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>AlertCenter</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='layui/css/layui.css')}}" media="all">
+
+    <style type="text/css">
+        body .to-fix-select .layui-layer-content {
+            overflow: visible;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layui-container" style="width: 99%">
+    <div class="layui-layout-right">
+        <i class="layui-icon layui-icon-note"></i>AccessKeyId： {{AccessKeyId}}
+    </div>
+
+    <!--fieldset class="layui-elem-field layui-field-title" style="margin-top: 50px;">
+        <legend>ZAPR管理</legend>
+    </fieldset-->
+
+
+    <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+        <ul class="layui-tab-title">
+            <li><a href="/">AccessKey管理</a></li>
+            <li><a href="/users">用户管理</a></li>
+            <li><a href="/scheduling">排班管理</a></li>
+            <li class="layui-this"><a href="/notice">通知策略</a></li>
+            <li><a href="/event">事件查询</a></li>
+            <li><a href="/config">系统维护</a></li>
+            <li style="float: right"><a href="/logout">登出</a></li>
+        </ul>
+    </div>
+
+
+    <table class="layui-hide" id="test" lay-filter="test"></table>
+
+    <script type="text/html" id="toolbarDemo">
+        <div class="layui-btn-container">
+            <button class="layui-btn layui-btn-sm" lay-event="CreateNotice"><i class="layui-icon layui-icon-add-circle"></i>创建通知策略</button>
+            <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="DeleteNotice"><i class="layui-icon layui-icon-delete"></i>删除选中</button>
+        </div>
+    </script>
+
+    <script type="text/html" id="barDemo">
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
+
+    <div class="layui-footer">
+        © ZAPR
+    </div>
+
+
+    <div id="AddDiv" style="display: none">
+        <fieldset class="layui-elem-field layui-field-title" style="margin-top: 30px;">
+            <legend>创建用户通知策略</legend>
+        </fieldset>
+        <form class="layui-form" action="">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">用户: </label>
+                    <div class="layui-input-inline">
+                        <select name="UserID" lay-verify="required">
+                            <option value=""></option>
+                            {% for i in UserInfo %}
+                            <option value="{{ i.ID }}">{{ i.UserName }} ({{ i.ID }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">告警级别: </label>
+                    <div class="layui-input-inline">
+                        <select name="AlarmLevel" lay-verify="required">
+                            <option value=""></option>
+                            <option value="all">所有</option>
+                            <option value="info">提醒</option>
+                            <option value="warning">警告</option>
+                            <option value="critical">严重</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">告警状态: </label>
+                    <div class="layui-input-inline">
+                        <select name="AlarmStatus" lay-verify="required">
+                            <option value=""></option>
+                            <option value="all">所有</option>
+                            <option value="occurs">发生时</option>
+                            <option value="closed">关闭时</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">通知方式: </label>
+                    <div class="layui-input-inline">
+                        <select name="NoticeMode" lay-verify="required">
+                            <option value=""></option>
+                            <option value="wechat">微信</option>
+                            <option value="email">邮件</option>
+                            <option value="phone">电话</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <div class="layui-col-md3 layui-col-md-offset8">
+                        <button type="submit" class="layui-btn" lay-submit="" lay-filter="Create"><i class="layui-icon layui-icon-ok-circle"></i>立即提交</button>
+                    </div>
+
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='jquery-3.4.1.min.js')}}" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='layui/layui.js')}}" charset="utf-8"></script>
+    <script>
+
+
+        layui.use(['form', 'element'], function () {
+            var $ = layui.jquery
+                , element = layui.element
+                , form = layui.form;
+
+
+            form.on('submit(Create)', function (data) {
+                var index = layer.load(1, {
+                    shade: [0.4, '#fff']
+                });
+                var data_json = data.field;
+                data_json["AccessKeyId"] = "{{AccessKeyId}}";
+                data_json["AccessKeySecret"] = "{{AccessKeySecret}}";
+
+
+                $.ajax({
+                    type: "POST",
+                    url: "/api/configure/user/notice/create",
+                    headers: {'Content-Type':'application/json'},
+                    data: JSON.stringify(data_json),
+                    dataType: 'json',
+                    success: function (ret) {
+                        if (ret.code == "0") {
+                            layer.closeAll();
+                            location.reload()
+                        } else {
+                            layer.close(index);
+                            layer.msg(ret.msg, {icon: 5});
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+
+        layui.use('table', function () {
+            var table = layui.table;
+
+            table.render({
+                elem: '#test'
+                , url: '/api/configure/user/notice/lists'
+                , where: {"AccessKeyId": "{{AccessKeyId}}", "AccessKeySecret": "{{AccessKeySecret}}"}
+                , contentType: 'application/json'
+                , toolbar: '#toolbarDemo'
+                , method: 'post'
+                , title: '通知策略'
+                , cols: [[
+                    {type: 'checkbox'}
+                    , {field: 'ID', title: 'ID', width: 60, sort: true}
+                    , {field: 'UserName', width: 120, title: '用户名'}
+                    , {field: 'AlarmLevel', width: 120, title: '告警级别', templet: '#event_level'}
+                    , {field: 'AlarmStatus', title: '告警状态', templet: '#AlarmStatus'}
+                    , {field: 'NoticeMode', title: '通知方式', templet: '#NoticeMode'}
+                    , {
+                        field: 'CreateTime',
+                        title: '创建时间',
+                        width: 200,
+                        templet: '<div> {% raw %} {{ timestampToTime(d.CreateTime)}} {% endraw %}</div>'
+                    }
+                ]]
+                , page: true
+            });
+
+            table.on('toolbar(test)', function (obj) {
+                var checkStatus = table.checkStatus(obj.config.id);
+                switch (obj.event) {
+                    case 'CreateNotice':
+                        layer.open({
+                            skin: 'to-fix-select',
+                            title: false,
+                            type: 1,
+                            area: ['670px', '250px'],
+                            content: $('#AddDiv')
+                        });
+                        break;
+                    case 'DeleteNotice':
+                        var index = layer.load(1, {
+                            shade: [0.4, '#fff']
+                        });
+                        var data = {};
+                        data["AccessKeyId"] = "{{AccessKeyId}}";
+                        data["AccessKeySecret"] = "{{AccessKeySecret}}";
+                        data["data"] =  checkStatus.data;
+                        $.ajax({
+                            type: "POST",
+                            url: "/api/configure/user/notice/delete",
+                            headers: {'Content-Type':'application/json'},
+                            data: JSON.stringify(data),
+                            dataType: 'json',
+                            success: function (ret) {
+                                if (ret.code == "0") {
+                                    layer.closeAll();
+                                    location.reload()
+                                } else {
+                                    layer.close(index);
+                                    layer.msg(ret.msg, {icon: 5});
+                                }
+                            }
+                        });
+                        break;
+                    case 'isAll':
+                        layer.msg(checkStatus.isAll ? '全选' : '未全选');
+                        break;
+
+                    //自定义头工具栏右侧图标 - 提示
+                    case 'LAYTABLE_TIPS':
+                        layer.alert('这是工具栏右侧自定义的一个图标按钮');
+                        break;
+                }
+            });
+        });
+    </script>
+
+    <script type="text/html" id="event_level">
+        {% raw %}
+        {{#  if(d.AlarmLevel === 'critical'){ }}
+        <div class="layui-btn layui-btn-danger  layui-btn-xs">严重</div>
+        {{#  } }}
+        {{#  if(d.AlarmLevel === 'warning'){ }}
+        <div class="layui-btn layui-btn-warm  layui-btn-xs">警告</div>
+        {{#  } }}
+        {{#  if(d.AlarmLevel === 'info'){ }}
+        <div class="layui-btn layui-btn-normal  layui-btn-xs">提醒</div>
+        {{#  } }}
+        {{#  if(d.AlarmLevel === 'all'){ }}
+        <div class="layui-btn layui-btn-primary  layui-btn-xs">所有</div>
+        {{#  } }}
+        {% endraw %}
+    </script>
+
+    <script type="text/html" id="AlarmStatus">
+        {% raw %}
+        {{#  if(d.AlarmStatus === 'occurs'){ }}
+        <div class="layui-btn layui-btn-danger  layui-btn-xs">发生时</div>
+        {{#  } }}
+        {{#  if(d.AlarmStatus === 'closed'){ }}
+        <div class="layui-btn  layui-btn-xs">关闭时</div>
+        {{#  } }}
+        {{#  if(d.AlarmStatus === 'all'){ }}
+        <div class="layui-btn layui-btn-primary  layui-btn-xs">所有</div>
+        {{#  } }}
+        {% endraw %}
+    </script>
+
+    <script type="text/html" id="NoticeMode">
+        {% raw %}
+        {{#  if(d.NoticeMode === 'wechat'){ }}
+        <i class="layui-icon layui-icon-login-wechat"></i>微信
+        {{#  } }}
+        {{#  if(d.NoticeMode === 'phone'){ }}
+        <i class="layui-icon layui-icon-cellphone"></i>电话
+        {{#  } }}
+        {{#  if(d.NoticeMode === 'email'){ }}
+        <i class="layui-icon layui-icon-picture-fine"></i>邮件
+        {{#  } }}
+        {% endraw %}
+    </script>
+
+</div>
+</body>
+</html>
