@@ -118,10 +118,13 @@ def before_request():
         else:
             scheduling_data = scheduling_data[0]
             order = scheduling_data.order.split(',')
-            if int(order[len(order) - 1]) == int(scheduling_data.be_on_duty):
-                next_id = order[0]
+            if len(order) > 1:
+                if int(order[len(order) - 1]) == int(scheduling_data.be_on_duty):
+                    next_id = order[0]
+                else:
+                    next_id = order[int(order.index(scheduling_data.be_on_duty)) + 1]
             else:
-                next_id = order[int(order.index(scheduling_data.be_on_duty)) + 1]
+                next_id = order[0]
             current = []
             data_ = []
             for i in json.loads(redis.get(redis_notice_strategy_key)):

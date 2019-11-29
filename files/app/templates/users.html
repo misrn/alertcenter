@@ -22,13 +22,13 @@
 
     <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
         <ul class="layui-tab-title">
-            <li> <a href="/">AccessKey管理</a> </li>
+            <li><a href="/">AccessKey管理</a></li>
             <li class="layui-this"><a href="/users">用户管理</a></li>
             <li><a href="/scheduling">排班管理</a></li>
             <li><a href="/notice">通知策略</a></li>
             <li><a href="/event">事件查询</a></li>
             <li><a href="/config">系统维护</a></li>
-            <li style="float: right">  <a href="/logout" >登出</a></li>
+            <li style="float: right"><a href="/logout">登出</a></li>
         </ul>
     </div>
 
@@ -67,12 +67,17 @@
                 , cols: [[
                     {type: 'checkbox'}
                     , {field: 'ID', title: 'ID', width: 60, sort: true}
-                    , {field: 'UserName', width:180, edit: 'text', title: '用户名'}
-                    , {field: 'PhoneNumber', width:180, title: '电话号码',edit: 'text'}
-                    , {field: 'EmailAddress', title: '邮件地址',edit: 'text'}
-                    , {field: 'WeChatID', title: '微信ID',edit: 'text'}
-                    , {field: 'CreateTime', title: '创建时间', width: 200, templet:'<div> {% raw %} {{ timestampToTime(d.CreateTime)}} {% endraw %}</div>'}
-                    , { toolbar: '#barDemo' , width: 80, title: '操作'}
+                    , {field: 'UserName', width: 180, edit: 'text', title: '用户名'}
+                    , {field: 'PhoneNumber', width: 180, title: '电话号码', edit: 'text'}
+                    , {field: 'EmailAddress', title: '邮件地址', edit: 'text'}
+                    , {field: 'WeChatID', title: '微信ID', edit: 'text'}
+                    , {
+                        field: 'CreateTime',
+                        title: '创建时间',
+                        width: 200,
+                        templet: '<div> {% raw %} {{ timestampToTime(d.CreateTime)}} {% endraw %}</div>'
+                    }
+                    , {toolbar: '#barDemo', width: 80, title: '操作'}
                 ]]
                 , page: true
             });
@@ -80,44 +85,52 @@
             table.on('tool(test)', function (obj) {
                 var data = obj.data;
                 if (obj.event === 'del') {
-                   var index = layer.load(1, {
-                       shade: [0.4, '#fff']
-                   });
-                   var data_json = {};
-                   data_json["AccessKeyId"] = "{{AccessKeyId}}";
-                   data_json["AccessKeySecret"] = "{{AccessKeySecret}}";
+
+                    var data_json = {};
+                    data_json["AccessKeyId"] = "{{AccessKeyId}}";
+                    data_json["AccessKeySecret"] = "{{AccessKeySecret}}";
                     data_json["UserID"] = data.ID;
-                   layer.confirm('确定删除用户', function (index) {
-                       $.ajax({
-                           type: "POST",
-                           url: "/api/user/delete",
-                           headers: {'Content-Type': 'application/json'},
-                           data: JSON.stringify(data_json),
-                           dataType: 'json',
-                           success: function (ret) {
-                               layer.closeAll();
-                               if (ret.code == "0") {
-                                   location.reload()
-                               } else {
-                                   layer.msg(ret.msg, {icon: 5});
-                               }
-                           }
-                       });
-                   });
+
+
+                    layer.confirm('删除用户时会同时删除该用户通知策略，是否继续操作？', {icon: 3, title: '警告'}
+                        , function () {
+                            var index = layer.load(1, {
+                                shade: [0.4, '#fff']
+                            });
+                            $.ajax({
+                                type: "POST",
+                                url: "/api/user/delete",
+                                headers: {'Content-Type': 'application/json'},
+                                data: JSON.stringify(data_json),
+                                dataType: 'json',
+                                success: function (ret) {
+                                    layer.closeAll();
+                                    if (ret.code == "0") {
+                                        obj.del();
+                                    } else {
+                                        layer.msg(ret.msg, {icon: 5});
+                                    }
+                                }
+                            });
+                        }
+                    );
+
                 }
             });
 
 
-            table.on('edit(test)', function(obj){
+            table.on('edit(test)', function (obj) {
                 var value = obj.value
-                    ,data = obj.data
-                    ,key_ = obj.field;
+                    , data = obj.data
+                    , key_ = obj.field;
                 layer.open({
                     content: '确认修改为: ' + value
-                    ,btn: ['确认', '取消',]
-                    ,yes: function(index, layero){
-                        data_ = {"UserID": data.ID, "AccessKeyId": "{{AccessKeyId}}",
-                            "AccessKeySecret": "{{AccessKeySecret}}"};
+                    , btn: ['确认', '取消',]
+                    , yes: function (index, layero) {
+                        data_ = {
+                            "UserID": data.ID, "AccessKeyId": "{{AccessKeyId}}",
+                            "AccessKeySecret": "{{AccessKeySecret}}"
+                        };
                         data_[key_] = value;
                         var index = layer.load(1, {
                             shade: [0.4, '#fff']
@@ -125,7 +138,7 @@
                         $.ajax({
                             type: "POST",
                             url: "/api/user/modify",
-                            headers: {'Content-Type':'application/json'},
+                            headers: {'Content-Type': 'application/json'},
                             data: JSON.stringify(data_),
                             dataType: 'json',
                             success: function (ret) {
@@ -135,13 +148,13 @@
                                 } else {
                                     layer.closeAll();
 
-                                    setTimeout("location.reload()",5000);
+                                    setTimeout("location.reload()", 5000);
                                     layer.msg(ret.msg, {icon: 5});
                                 }
                             }
                         });
                     }
-                    ,btn2: function(index, layero){
+                    , btn2: function (index, layero) {
                     }
                 });
             });

@@ -65,8 +65,11 @@ def lists():
 def delete():
     try:
         data = json.loads(request.data)
-        order = [int(i) for i in SCHEDULING.query.all()[0].order.split(',')]
-
+        schedul = SCHEDULING.query.all()[0]
+        order = [int(i) for i in schedul.order.split(',')]
+        noti = NOTICESTRATRGY.query.filter(NOTICESTRATRGY.user_id == data['UserID']).all()
+        if int(schedul.be_on_duty) == int(data['UserID']):
+            return json.dumps({"code": 1, "msg": u"当前用户正在值班，下次请提前操作!"})
         if 'UserID' not in data.keys():
             return json.dumps({"code": 1, "msg": post_parameter_error_info})
         if int(data['UserID']) in order:
@@ -75,8 +78,12 @@ def delete():
             return json.dumps({"code": 1, "msg": u"输入用户ID不存在!"})
         else:
             db.session.delete(USER.query.get(data['UserID']))
+            for i in noti:
+                db.session.delete(i)
             db.session.commit()
             redis.delete(redis_user_key)
+            redis.delete(redis_notice_strategy_key)
+            redis.delete(redis_current_duty_key)
             return json.dumps({"code": 0, "msg": u"用户删除成功."})
     except Exception as Error:
         logging.error(str(Error))
